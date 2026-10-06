@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 type IconName =
   | "home"
@@ -85,7 +86,7 @@ function RuntimeIllustration() {
   );
 }
 
-type Page = "home" | "projects" | "playground" | "templates" | "integrations" | "docs" | "settings" | "project" | "runtime" | "create" | "assign-project" | "create-project" | "auth-signin" | "auth-signup" | "auth-forgot" | "auth-verify";
+type Page = "home" | "projects" | "playground" | "templates" | "integrations" | "integration-detail" | "docs" | "settings" | "project" | "runtime" | "create" | "assign-project" | "create-project" | "auth-signin" | "auth-signup" | "auth-forgot" | "auth-verify";
 
 const projects = [
   { name: "Customer Support", plan: "Studio", runtimes: 2, status: "Healthy" },
@@ -98,6 +99,28 @@ const recentActions: { icon: IconName; title: string; detail: string; time: stri
   { icon: "refresh", title: "Knowledge synchronized", detail: "Help center docs · 842 documents", time: "1h ago", tone: "blue" },
   { icon: "key", title: "API token used", detail: "Customer Support · Production token", time: "2h ago", tone: "violet" },
   { icon: "tool", title: "Tool connected", detail: "Zendesk · Customer Support", time: "Yesterday", tone: "amber" },
+];
+
+const requestChartData = [
+  { day: "Mon", requests: 820 }, { day: "Tue", requests: 1120 }, { day: "Wed", requests: 1380 },
+  { day: "Thu", requests: 1620 }, { day: "Fri", requests: 1840 }, { day: "Sat", requests: 2010 }, { day: "Sun", requests: 2280 },
+];
+const modelChartData = [
+  { day: "Mon", gpt: 980, gemini: 530 }, { day: "Tue", gpt: 800, gemini: 650 }, { day: "Wed", gpt: 1120, gemini: 430 },
+  { day: "Thu", gpt: 700, gemini: 820 }, { day: "Fri", gpt: 550, gemini: 960 }, { day: "Sat", gpt: 720, gemini: 880 }, { day: "Sun", gpt: 400, gemini: 1180 },
+];
+const latencyChartData = [120,260,480,820,1100,980,720,460,270,150,90,45].map((requests, index) => ({ bucket: `${index * 200}`, requests }));
+const tokenChartData = [
+  { day: "Mon", input: 820, cached: 280, output: 200 }, { day: "Tue", input: 960, cached: 340, output: 240 }, { day: "Wed", input: 750, cached: 250, output: 180 },
+  { day: "Thu", input: 1100, cached: 380, output: 280 }, { day: "Fri", input: 880, cached: 310, output: 220 }, { day: "Sat", input: 1180, cached: 400, output: 300 }, { day: "Sun", input: 1010, cached: 350, output: 250 },
+];
+const spendChartData = [
+  [5.8,1.8,1.2],[7.2,2.4,1.6],[4.8,1.6,1],[8.8,2.8,1.8],[6.4,2.1,1.3],[9.8,3.3,2.2],
+  [8.2,2.7,1.7],[10.5,3.7,2.4],[9.1,3.1,2],[11.2,4.1,2.5],[9.6,3.4,2.1],[11.8,4.2,2.4],
+].map(([inference, tools, search], index) => ({ day: `${index + 1}`, inference, tools, search }));
+const percentileChartData = [
+  { day: "Mon", p50: 420, p95: 980 }, { day: "Tue", p50: 460, p95: 1120 }, { day: "Wed", p50: 500, p95: 1080 },
+  { day: "Thu", p50: 570, p95: 1380 }, { day: "Fri", p50: 550, p95: 1260 }, { day: "Sat", p50: 640, p95: 1580 }, { day: "Sun", p50: 610, p95: 1460 },
 ];
 
 const actions: { icon: IconName; title: string; copy: string; disabled?: boolean }[] = [
@@ -194,7 +217,6 @@ function Sidebar({ page, navigate, projectTab, setProjectTab, developerPage, set
               ["Runtimes", "activity"],
               ["Playground", "flask"],
               ["Integrations", "link"],
-              ["Tools", "tool"],
               ["Usage", "route"],
             ].map(([label, icon]) => <button key={label} title={label} className={(page === "runtime" && label === "Runtimes") || (page === "project" && projectTab === label) ? "nav-item active" : "nav-item"} onClick={() => openProjectTab(label)}><Icon name={icon as IconName} /><span>{label}</span></button>)}
             <button title="Developer" className={projectTab === "Developer" ? "nav-item active" : "nav-item"} onClick={() => setDeveloperOpen((value) => !value)}><Icon name="code" /><span>Developer</span><Icon name="chevron" size={13} /></button>
@@ -298,9 +320,9 @@ function ProjectPage({ navigate, tab, developerPage, setDeveloperPage }: { navig
     <main className="main inner-main project-page">
       <header className="project-header">
         <div><div className="project-kicker"><span className="project-glyph">CS</span><span>Project</span></div><div className="project-title-row"><h1>Customer Support</h1><span className="health"><i />Operational</span></div><p>AI support infrastructure for customer-facing applications</p></div>
-        <div className="project-header-actions"><span className="plan-chip">Studio plan</span><button className="quiet-button"><Icon name="settings" size={15} /> Settings</button><button className="primary-button" onClick={() => navigate("create")}><Icon name="plus" size={15} /> Create runtime</button></div>
+        <div className="project-header-actions"><span className="plan-chip">Studio</span><button className="quiet-button icon-only-action" aria-label="Project settings" title="Project settings"><Icon name="settings" size={15} /></button><button className="primary-button icon-only-action" aria-label="Create runtime" title="Create runtime" onClick={() => navigate("create")}><Icon name="plus" size={15} /></button></div>
       </header>
-      {tab === "Overview" ? <ProjectOverview navigate={navigate} /> : tab === "Runtimes" ? <Runtimes navigate={navigate} /> : tab === "Developer" ? <DeveloperPage section={developerPage} setSection={setDeveloperPage} /> : tab === "Settings" ? <ProjectSettings /> : <EmptyPanel name={tab} />}
+      {tab === "Overview" ? <ProjectOverview navigate={navigate} /> : tab === "Runtimes" ? <Runtimes navigate={navigate} /> : tab === "Usage" ? <ProjectUsage /> : tab === "Developer" ? <DeveloperPage section={developerPage} setSection={setDeveloperPage} /> : tab === "Settings" ? <ProjectSettings /> : <EmptyPanel name={tab} />}
     </main>
   );
 }
@@ -332,6 +354,15 @@ function ProjectOverview({ navigate }: { navigate: (page: Page) => void }) {
 
 function Runtimes({ navigate }: { navigate: (page: Page) => void }) {
   return <div className="content-panel"><div className="page-actions"><div><h2>Runtimes</h2><p>Configure and operate the AI systems in this project.</p></div><button className="primary-button" onClick={() => navigate("create")}><Icon name="plus" size={16} /> Create runtime</button></div><div className="filter-pills"><button className="active">All</button><button>Active</button><button>Paused</button></div><div className="runtime-list">{[["Production", "Automatic routing", "Updated 14m ago", "Healthy"], ["Development", "Gemini 2.0 Flash", "Updated 1h ago", "Healthy"], ["Evaluation", "Automatic routing", "Updated yesterday", "Paused"]].map(([name, mode, time, status]) => <button className="runtime-full-row" onClick={() => navigate("runtime")} key={name}><span className="runtime-symbol"><Icon name="activity" size={16} /></span><span><strong>{name}</strong><small>{mode}</small></span><span className={`health ${status === "Paused" ? "muted" : ""}`}><i />{status}</span><time>{time}</time><Icon name="arrow" size={16} /></button>)}</div></div>;
+}
+
+function ProjectUsage() {
+  const [view, setView] = useState("Ledger");
+  return <div className="content-panel project-usage page-enter">
+    <div className="page-actions"><div><h2>Usage</h2><p>Understand requests, spend, and infrastructure consumption.</p></div><div className="analytics-range"><button>7d</button><button className="active">30d</button><button>90d</button></div></div>
+    <nav className="analytics-subtabs">{["Ledger","Metrics","Logs"].map((item) => <button className={view === item ? "active" : ""} onClick={() => setView(item)} key={item}>{item}</button>)}</nav>
+    {view === "Ledger" ? <><div className="usage-summary">{[["Current period","$42.86"],["Requests","28,491"],["Model inference","$34.12"],["Tools & search","$8.74"]].map(([label,value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}</div><div className="usage-ledger"><div className="usage-ledger-head"><span>Date</span><span>Runtime</span><span>Category</span><span>Requests</span><span>Tokens</span><span>Cost</span></div>{[["Today","Production","Model inference","1,842","2.8M","$3.42"],["Yesterday","Production","Knowledge retrieval","1,604","2.4M","$2.91"],["May 18","Development","Tool executions","486","682K","$0.84"],["May 17","Production","External search","1,532","2.2M","$3.06"],["May 16","Evaluation","Model inference","924","1.4M","$1.72"]].map((row) => <button className="usage-ledger-row" key={row.join("-")}>{row.map((cell,index) => index === 5 ? <strong key={cell}>{cell}</strong> : <span key={`${cell}-${index}`}>{cell}</span>)}</button>)}</div></> : view === "Metrics" ? <div className="analytics-grid"><section className="chart-card chart-wide"><div className="chart-head"><div><h3>Daily project spend</h3><p>Inference, tools, and retrieval</p></div><strong>$42.86 total</strong></div><div className="rechart-wrap"><ResponsiveContainer width="100%" height="100%"><BarChart data={spendChartData}><CartesianGrid vertical={false} stroke="#30302d" /><XAxis dataKey="day" axisLine={false} tickLine={false} /><YAxis hide /><Tooltip cursor={{ fill: "rgba(255,255,255,.025)" }} /><Bar dataKey="inference" stackId="spend" fill="#34d399" radius={[0,0,3,3]} /><Bar dataKey="tools" stackId="spend" fill="#8d9b91" /><Bar dataKey="search" stackId="spend" fill="#555c56" radius={[3,3,0,0]} /></BarChart></ResponsiveContainer></div><div className="bar-legend"><span><i className="stack-inference-key" />Inference</span><span><i className="stack-tools-key" />Tools</span><span><i className="stack-search-key" />Search</span></div></section><section className="chart-card"><div className="chart-head"><div><h3>Usage by runtime</h3><p>Share of project spend</p></div></div><div className="horizontal-bars">{[["Production","76%","$32.57"],["Development","16%","$6.86"],["Evaluation","8%","$3.43"]].map(([name,width,value]) => <div key={name}><span><b>{name}</b><small>{value}</small></span><div><i className={`width-${width.replace("%","")}`} /></div></div>)}</div></section><section className="chart-card"><div className="chart-head"><div><h3>Cost categories</h3><p>Current billing period</p></div></div><div className="metric-gauges">{[["Model inference","$34.12","80%"],["External search","$4.92","12%"],["Tool execution","$3.82","9%"]].map(([name,value,width]) => <div key={name}><span><b>{name}</b><small>{value}</small></span><div><i className={`width-${width.replace("%","")}`} /></div></div>)}</div></section></div> : <div className="usage-log-list">{[["Budget threshold reached 50%","Project budget","2h ago"],["Usage export generated","May ledger · CSV","Yesterday"],["Request limit increased","Studio defaults → Custom","2d ago"],["Billing period started","May 1 – May 31","18d ago"]].map(([title,copy,time]) => <div key={title}><span className="timeline-icon"><Icon name="activity" size={14} /></span><span><strong>{title}</strong><small>{copy}</small></span><time>{time}</time></div>)}</div>}
+  </div>;
 }
 
 function DeveloperPage({ section, setSection }: { section: string; setSection: (section: string) => void }) {
@@ -426,6 +457,35 @@ function Activity() {
   return <div className="content-panel"><div className="page-actions"><div><h2>Recent activity</h2><p>Requests, deployments, tool calls, and runtime changes.</p></div><button className="quiet-button">Filter activity <Icon name="chevron" size={14} /></button></div><div className="timeline">{[["Request completed", "GPT-4.1 mini · 684ms", "Just now"], ["Tool executed", "Zendesk · create_ticket", "8m ago"], ["Runtime deployed", "Version 24 published to Production", "12m ago"], ["Knowledge synchronized", "Help center · 842 documents", "1h ago"], ["Routing updated", "Balanced strategy enabled", "Yesterday"]].map(([title, copy, time], i) => <div className="timeline-row" key={title}><span className={`timeline-icon ${i === 0 ? "success" : ""}`}><Icon name={i === 1 ? "tool" : i === 2 ? "terminal" : "activity"} size={15} /></span><span><strong>{title}</strong><small>{copy}</small></span><time>{time}</time></div>)}</div></div>;
 }
 
+function RequestVolumeChart() {
+  return <div className="rechart-wrap"><ResponsiveContainer width="100%" height="100%"><AreaChart data={requestChartData}><defs><linearGradient id="requestsFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#34d399" stopOpacity=".28" /><stop offset="100%" stopColor="#34d399" stopOpacity="0" /></linearGradient></defs><CartesianGrid vertical={false} stroke="#30302d" /><XAxis dataKey="day" axisLine={false} tickLine={false} /><YAxis hide /><Tooltip cursor={{ stroke: "#41413d" }} /><Area type="monotone" dataKey="requests" stroke="#34d399" strokeWidth={2} fill="url(#requestsFill)" activeDot={{ r: 4, fill: "#34d399" }} /></AreaChart></ResponsiveContainer></div>;
+}
+
+function OutcomeDonutChart() {
+  const data = [{ name: "Completed", value: 12410 }, { name: "Failed", value: 72 }];
+  return <div className="donut-rechart"><ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={data} dataKey="value" innerRadius={45} outerRadius={58} paddingAngle={2} startAngle={90} endAngle={-270}>{data.map((entry,index) => <Cell key={entry.name} fill={index === 0 ? "#34d399" : "#44443f"} />)}</Pie><Tooltip /></PieChart></ResponsiveContainer><div><strong>99.4%</strong><small>successful</small></div></div>;
+}
+
+function ModelRequestsChart() {
+  return <div className="rechart-wrap compact"><ResponsiveContainer width="100%" height="100%"><BarChart data={modelChartData}><CartesianGrid vertical={false} stroke="#30302d" /><XAxis dataKey="day" axisLine={false} tickLine={false} /><YAxis hide /><Tooltip cursor={{ fill: "rgba(255,255,255,.025)" }} /><Bar dataKey="gpt" fill="#34d399" radius={[4,4,0,0]} /><Bar dataKey="gemini" fill="#73766f" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></div>;
+}
+
+function LatencyDistributionChart() {
+  return <div className="rechart-wrap compact"><ResponsiveContainer width="100%" height="100%"><BarChart data={latencyChartData}><CartesianGrid vertical={false} stroke="#30302d" /><XAxis dataKey="bucket" axisLine={false} tickLine={false} interval={2} /><YAxis hide /><Tooltip cursor={{ fill: "rgba(255,255,255,.025)" }} /><Bar dataKey="requests" fill="#34d399" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></div>;
+}
+
+function TokenVolumeChart() {
+  return <div className="rechart-wrap compact"><ResponsiveContainer width="100%" height="100%"><BarChart data={tokenChartData}><CartesianGrid vertical={false} stroke="#30302d" /><XAxis dataKey="day" axisLine={false} tickLine={false} /><YAxis hide /><Tooltip cursor={{ fill: "rgba(255,255,255,.025)" }} /><Bar dataKey="input" stackId="tokens" fill="#34d399" /><Bar dataKey="cached" stackId="tokens" fill="#8d9b91" /><Bar dataKey="output" stackId="tokens" fill="#555c56" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></div>;
+}
+
+function PercentileChart() {
+  return <div className="rechart-wrap"><ResponsiveContainer width="100%" height="100%"><LineChart data={percentileChartData}><CartesianGrid vertical={false} stroke="#30302d" /><XAxis dataKey="day" axisLine={false} tickLine={false} /><YAxis hide /><Tooltip cursor={{ stroke: "#41413d" }} /><Line type="monotone" dataKey="p95" stroke="#34d399" strokeWidth={2} dot={false} activeDot={{ r: 4 }} /><Line type="monotone" dataKey="p50" stroke="#8d9b91" strokeWidth={2} strokeDasharray="5 5" dot={false} /></LineChart></ResponsiveContainer></div>;
+}
+
+function TokenThroughputChart() {
+  return <div className="rechart-wrap compact"><ResponsiveContainer width="100%" height="100%"><BarChart data={tokenChartData}><CartesianGrid vertical={false} stroke="#30302d" /><XAxis dataKey="day" axisLine={false} tickLine={false} /><YAxis hide /><Tooltip cursor={{ fill: "rgba(255,255,255,.025)" }} /><Bar dataKey="input" fill="#34d399" radius={[4,4,0,0]} /><Bar dataKey="output" fill="#73766f" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer></div>;
+}
+
 function Analytics() {
   const [view, setView] = useState("Analytics");
   return (
@@ -442,43 +502,34 @@ function Analytics() {
       <div className="analytics-grid">
         <section className="chart-card chart-wide">
           <div className="chart-head"><div><h3>Request volume</h3><p>Requests across all routes</p></div><span><i />Requests</span></div>
-          <svg className="line-chart" viewBox="0 0 720 230" preserveAspectRatio="none" aria-label="Request volume over seven days">
-            <defs><linearGradient id="requestArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#6d9a78" stopOpacity=".25" /><stop offset="100%" stopColor="#6d9a78" stopOpacity="0" /></linearGradient></defs>
-            {[35, 80, 125, 170, 215].map((y) => <line key={y} x1="42" x2="710" y1={y} y2={y} className="chart-gridline" />)}
-            <path className="chart-area" d="M42 185 C85 171 102 145 142 151 S202 114 242 125 S300 83 342 102 S398 65 442 86 S505 58 542 69 S610 42 710 48 L710 215 L42 215Z" />
-            <path className="chart-line" d="M42 185 C85 171 102 145 142 151 S202 114 242 125 S300 83 342 102 S398 65 442 86 S505 58 542 69 S610 42 710 48" />
-            {[[42,185],[142,151],[242,125],[342,102],[442,86],[542,69],[710,48]].map(([x,y]) => <circle key={x} cx={x} cy={y} r="3" className="chart-point" />)}
-            {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map((day, i) => <text key={day} x={42 + i * 111} y="229" className="chart-label">{day}</text>)}
-          </svg>
+          <RequestVolumeChart />
         </section>
         <section className="chart-card">
           <div className="chart-head"><div><h3>Request outcome</h3><p>Completion status</p></div></div>
           <div className="donut-wrap">
-            <svg viewBox="0 0 120 120" aria-label="99.42 percent successful requests"><circle className="donut-track" cx="60" cy="60" r="44" /><circle className="donut-value" cx="60" cy="60" r="44" /><text x="60" y="57" className="donut-number">99.4%</text><text x="60" y="72" className="donut-caption">successful</text></svg>
+            <OutcomeDonutChart />
             <div className="donut-legend"><span><i className="success" />Completed <b>12,410</b></span><span><i className="failed" />Failed <b>72</b></span></div>
           </div>
         </section>
         <section className="chart-card">
           <div className="chart-head"><div><h3>Requests by model</h3><p>Daily model distribution</p></div></div>
-          <svg className="bar-chart" viewBox="0 0 450 210" preserveAspectRatio="none" aria-label="Requests by model bar chart">
-            {[40, 85, 130, 175].map((y) => <line key={y} x1="30" x2="440" y1={y} y2={y} className="chart-gridline" />)}
-            {[[45,98,53],[100,80,65],[155,112,43],[210,70,82],[265,55,96],[320,72,88],[375,40,118]].map(([x,a,b]) => <g key={x}><rect x={x} y={190-a} width="15" height={a} rx="4" className="bar-primary" /><rect x={x+18} y={190-b} width="15" height={b} rx="4" className="bar-secondary" /></g>)}
-          </svg>
+          <ModelRequestsChart />
           <div className="bar-legend"><span><i className="primary" />GPT-4.1 mini · 64%</span><span><i className="secondary" />Gemini Flash · 36%</span></div>
         </section>
         <section className="chart-card">
           <div className="chart-head"><div><h3>Latency distribution</h3><p>End-to-end response time</p></div><strong>p95 1.8s</strong></div>
-          <svg className="bar-chart latency-chart" viewBox="0 0 450 210" preserveAspectRatio="none" aria-label="Latency distribution histogram">
-            {[40, 85, 130, 175].map((y) => <line key={y} x1="30" x2="440" y1={y} y2={y} className="chart-gridline" />)}
-            {[24,49,84,128,155,139,105,71,42,26,16,9].map((height, index) => <rect key={index} x={36 + index * 33} y={190-height} width="23" height={height} rx="4" className="latency-bar" />)}
-            {["0ms","500ms","1s","1.5s","2s+"].map((label, i) => <text key={label} x={32 + i * 100} y="207" className="chart-label">{label}</text>)}
-          </svg>
+          <LatencyDistributionChart />
         </section>
         <section className="chart-card">
           <div className="chart-head"><div><h3>Tool executions</h3><p>Calls by connected tool</p></div><strong>1,842 total</strong></div>
           <div className="horizontal-bars">
             {[["Zendesk", "72%", "1,326"], ["Knowledge search", "18%", "332"], ["Customer lookup", "7%", "129"], ["Escalation", "3%", "55"]].map(([name, width, value]) => <div key={name}><span><b>{name}</b><small>{value}</small></span><div><i className={`width-${width.replace("%","")}`} /></div></div>)}
           </div>
+        </section>
+        <section className="chart-card">
+          <div className="chart-head"><div><h3>Token volume</h3><p>Input, cached, and output tokens</p></div><strong>18.6M total</strong></div>
+          <TokenVolumeChart />
+          <div className="bar-legend"><span><i className="stack-inference-key" />Input</span><span><i className="stack-tools-key" />Cached</span><span><i className="stack-search-key" />Output</span></div>
         </section>
       </div>
       </> : view === "Metrics" ? <MetricsView /> : <LogsView />}
@@ -490,8 +541,8 @@ function MetricsView() {
   return <div className="metrics-view">
     <div className="analytics-stats">{[["CPU time", "184ms", "p50"], ["Memory", "128MB", "average"], ["Tokens / request", "1,842", "+4.2%"], ["Cache hit rate", "71.8%", "+8.1%"]].map(([label,value,detail]) => <div key={label}><span>{label}</span><strong>{value}</strong><small>{detail}</small></div>)}</div>
     <div className="analytics-grid">
-      <section className="chart-card chart-wide"><div className="chart-head"><div><h3>Latency percentiles</h3><p>Response performance by percentile</p></div><span><i />p50 · p95</span></div><svg className="line-chart" viewBox="0 0 720 230" preserveAspectRatio="none"><defs><linearGradient id="metricArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#738b9c" stopOpacity=".2" /><stop offset="100%" stopColor="#738b9c" stopOpacity="0" /></linearGradient></defs>{[35,80,125,170,215].map((y) => <line key={y} x1="42" x2="710" y1={y} y2={y} className="chart-gridline" />)}<path className="metric-area" d="M42 174 L140 153 L238 160 L336 116 L434 132 L532 91 L630 105 L710 72 L710 215 L42 215Z" /><path className="metric-line" d="M42 174 L140 153 L238 160 L336 116 L434 132 L532 91 L630 105 L710 72" /><path className="metric-line secondary" d="M42 198 L140 190 L238 185 L336 174 L434 177 L532 159 L630 166 L710 151" /></svg><div className="bar-legend"><span><i className="metric-p95" />p95 latency</span><span><i className="metric-p50" />p50 latency</span></div></section>
-      <section className="chart-card"><div className="chart-head"><div><h3>Token throughput</h3><p>Input and output tokens</p></div><strong>2.4M total</strong></div><svg className="bar-chart" viewBox="0 0 450 210" preserveAspectRatio="none">{[40,85,130,175].map((y) => <line key={y} x1="30" x2="440" y1={y} y2={y} className="chart-gridline" />)}{[[45,120,45],[100,98,59],[155,135,52],[210,88,66],[265,144,42],[320,112,61],[375,152,55]].map(([x,a,b]) => <g key={x}><rect x={x} y={190-a} width="16" height={a} rx="4" className="bar-primary" /><rect x={x+19} y={190-b} width="16" height={b} rx="4" className="bar-secondary" /></g>)}</svg></section>
+      <section className="chart-card chart-wide"><div className="chart-head"><div><h3>Latency percentiles</h3><p>Response performance by percentile</p></div><span><i />p50 · p95</span></div><PercentileChart /><div className="bar-legend"><span><i className="metric-p95" />p95 latency</span><span><i className="metric-p50" />p50 latency</span></div></section>
+      <section className="chart-card"><div className="chart-head"><div><h3>Token throughput</h3><p>Input and output tokens</p></div><strong>2.4M total</strong></div><TokenThroughputChart /></section>
       <section className="chart-card"><div className="chart-head"><div><h3>Runtime health</h3><p>Infrastructure saturation</p></div></div><div className="metric-gauges">{[["Concurrency","42 / 50","84%"],["Cache capacity","7.1 / 10 GB","71%"],["Rate limit","612 / 1K rpm","61%"]].map(([name,value,width]) => <div key={name}><span><b>{name}</b><small>{value}</small></span><div><i className={`width-${width.replace("%","")}`} /></div></div>)}</div></section>
     </div>
   </div>;
@@ -618,7 +669,7 @@ function IntegrationIcon({ code }: { code: string }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{marks[code]}</svg>;
 }
 
-function IntegrationsPage({ navigate }: { navigate: (page: Page) => void }) {
+function IntegrationsPage({ navigate, openIntegration }: { navigate: (page: Page) => void; openIntegration: (code: string, name: string) => void }) {
   const integrations = [
     ["ZE","Zendesk","Create tickets, look up customers, and automate support workflows.","Support","Connected","Customer Support"],
     ["SL","Slack","Send notifications and let runtimes collaborate in Slack channels.","Communication","Connected","Internal Knowledge"],
@@ -643,9 +694,29 @@ function IntegrationsPage({ navigate }: { navigate: (page: Page) => void }) {
       <div className="integration-card-head"><span className={`integration-logo integration-${initials.toLowerCase()}`}><IntegrationIcon code={initials} /></span><span className={status === "Connected" ? "integration-status connected" : "integration-status"}>{status === "Connected" && <i />}{status}</span></div>
       <h2>{name}</h2><p>{copy}</p>
       <div className="integration-meta"><span>{category}</span>{project && <span>{project}</span>}</div>
-      <footer><button onClick={() => status === "Connected" && navigate("project")}>{status === "Connected" ? "Manage connection" : "View integration"} <Icon name="arrow" size={13} /></button></footer>
+      <footer><button onClick={() => openIntegration(initials, name)}>{status === "Connected" ? "Manage connection" : "View integration"} <Icon name="arrow" size={13} /></button></footer>
     </article>)}</section>
     <section className="integration-note"><Icon name="shield" size={17} /><div><strong>Connections stay project-scoped</strong><p>Credentials, permissions, and usage are isolated to the project where an integration is connected.</p></div><button onClick={() => navigate("projects")}>View projects <Icon name="arrow" size={13} /></button></section>
+  </main>;
+}
+
+function IntegrationDetailPage({ code, name, navigate }: { code: string; name: string; navigate: (page: Page) => void }) {
+  const connected = ["ZE","SL","NO"].includes(code);
+  const capabilities = code === "ZE" ? [["Create tickets","Create and update Zendesk tickets safely."],["Customer lookup","Retrieve customer and organization context."],["Ticket search","Ground responses in previous support history."]] : code === "NO" ? [["Page sync","Index selected pages and databases."],["Incremental updates","Synchronize only content that changed."],["Permission mapping","Respect source access boundaries."]] : [["Runtime actions",`Allow runtimes to securely call approved ${name} actions.`],["Knowledge sync","Use selected content as grounded context."],["Event delivery","Receive service events inside Zyntry."]];
+  return <main className="main integration-detail-page page-enter">
+    <button className="back-link" onClick={() => navigate("integrations")}><span>←</span> All integrations</button>
+    <header className="integration-detail-head"><div className="integration-detail-identity"><span className={`integration-logo integration-${code.toLowerCase()}`}><IntegrationIcon code={code} /></span><div><span className="eyebrow">Integration</span><h1>{name}</h1><p>Connect {name} to project runtimes for secure knowledge and actions.</p></div></div><div><span className={connected ? "integration-status connected" : "integration-status"}>{connected && <i />}{connected ? "Connected" : "Available"}</span><button className="primary-button">{connected ? "Manage connection" : `Connect ${name}`} <Icon name="arrow" size={14} /></button></div></header>
+    <div className="integration-detail-layout">
+      <section>
+        <div className="integration-detail-section"><span className="eyebrow">Capabilities</span><h2>What this integration enables</h2><div className="capability-list">{capabilities.map(([title,copy],index) => <div key={title}><span><Icon name={index === 0 ? "tool" : index === 1 ? "book" : "activity"} size={16} /></span><div><strong>{title}</strong><p>{copy}</p></div></div>)}</div></div>
+        <div className="integration-detail-section"><span className="eyebrow">Setup</span><h2>How connection works</h2><div className="setup-steps">{[["1","Choose a project","Connections and credentials stay isolated to one project."],["2","Authorize access",`Grant Zyntry only the required ${name} permissions.`],["3","Select capabilities","Choose the knowledge, tools, and events runtimes may use."]].map(([number,title,copy]) => <div key={number}><span>{number}</span><div><strong>{title}</strong><p>{copy}</p></div></div>)}</div></div>
+      </section>
+      <aside>
+        <div className="integration-side-card"><h3>Connection details</h3><span><small>Authentication</small><strong>OAuth 2.0</strong></span><span><small>Scope</small><strong>Project</strong></span><span><small>Data handling</small><strong>Encrypted</strong></span><span><small>Availability</small><strong>Pro and above</strong></span></div>
+        {connected && <div className="integration-side-card"><h3>Connected projects</h3><button onClick={() => navigate("project")}><span className="mini-glyph">CS</span><span><strong>Customer Support</strong><small>3 capabilities enabled</small></span><Icon name="arrow" size={13} /></button></div>}
+        <div className="developer-callout"><Icon name="shield" size={15} /><div><strong>Project-level security</strong><p>Credentials are never shared with other projects.</p></div></div>
+      </aside>
+    </div>
   </main>;
 }
 
@@ -709,7 +780,7 @@ function CreateRuntimePage({ initialPrompt, navigate }: { initialPrompt: string;
           <div className="chat-thread">
             {messages.map((message, index) => <div className={`chat-message ${message.from}`} key={`${message.from}-${index}`}>
               {message.from === "zyntry" && <span className="message-avatar"><Icon name="spark" size={13} /></span>}
-              <div><span>{message.from === "zyntry" ? "Zyntry" : "You"}</span><p>{message.text}</p></div>
+              <div><span>{message.from === "zyntry" ? "Zyntry" : "You"}</span><p>{message.text}</p>{message.from === "zyntry" && <div className="chat-response-metrics"><span><Icon name="activity" size={11} />684ms</span><span>1.2K tokens</span><span className="valid"><Icon name="check" size={11} />Validated</span></div>}</div>
             </div>)}
             {stage === 2 && <div className="understood chat-complete"><span><Icon name="check" size={15} /></span><p><strong>Draft complete</strong><br />Project and plan selection are now available.</p></div>}
           </div>
@@ -883,6 +954,7 @@ export default function App({ initialPage = "home" }: { initialPage?: Page }) {
   const [projectTab, setProjectTab] = useState("Overview");
   const [developerPage, setDeveloperPage] = useState("API Tokens");
   const [accountSection, setAccountSection] = useState("Profile");
+  const [integrationDetail, setIntegrationDetail] = useState({ code: "ZE", name: "Zendesk" });
   const navigate = (next: Page) => {
     const authPaths: Partial<Record<Page, string>> = { "auth-signin": "/sign-in", "auth-signup": "/create-account", "auth-forgot": "/forgot-password", "auth-verify": "/verify" };
     if (authPaths[next]) {
@@ -899,9 +971,10 @@ export default function App({ initialPage = "home" }: { initialPage?: Page }) {
   const startCreate = (prompt = "") => { setRuntimePrompt(prompt); navigate("create"); };
   const utilityPage = page === "playground" ? ["Playground", "Experiment with models, prompts and runtime behavior."] : page === "templates" ? ["Templates", "Start from a proven AI runtime pattern."] : page === "docs" ? ["Documentation", "Guides and references for building with Zyntry."] : ["Account settings", "Manage your profile, security, appearance, and notifications."];
   const openAccount = (section: string) => { setAccountSection(section); navigate("settings"); };
+  const openIntegration = (code: string, name: string) => { setIntegrationDetail({ code, name }); navigate("integration-detail"); };
   if (page === "auth-signin") return <AuthPage mode="signin" navigate={navigate} />;
   if (page === "auth-signup") return <AuthPage mode="signup" navigate={navigate} />;
   if (page === "auth-forgot") return <AuthPage mode="forgot" navigate={navigate} />;
   if (page === "auth-verify") return <AuthPage mode="verify" navigate={navigate} />;
-  return <div className="app-shell"><Sidebar page={page} navigate={navigate} projectTab={projectTab} setProjectTab={setProjectTab} developerPage={developerPage} setDeveloperPage={setDeveloperPage} openAccount={openAccount} />{page === "home" ? <Home navigate={navigate} startCreate={startCreate} /> : page === "create" ? <CreateRuntimePage initialPrompt={runtimePrompt} navigate={navigate} /> : page === "assign-project" ? <ProjectAssignmentPage navigate={navigate} /> : page === "create-project" ? <CreateProjectPage navigate={navigate} /> : page === "project" ? <ProjectPage navigate={navigate} tab={projectTab} developerPage={developerPage} setDeveloperPage={setDeveloperPage} /> : page === "runtime" ? <RuntimePage navigate={navigate} /> : page === "playground" ? <PlaygroundPage /> : page === "templates" ? <TemplatesPage startCreate={startCreate} /> : page === "integrations" ? <IntegrationsPage navigate={navigate} /> : page === "settings" ? <AccountSettings section={accountSection} setSection={setAccountSection} /> : page === "projects" ? <ProjectsPage navigate={navigate} /> : <main className="main inner-main standalone"><header><span className="eyebrow">Zyntry Console</span><h1>{utilityPage[0]}</h1><p>{utilityPage[1]}</p></header><EmptyPanel name={utilityPage[0]} /></main>}</div>;
+  return <div className="app-shell"><Sidebar page={page} navigate={navigate} projectTab={projectTab} setProjectTab={setProjectTab} developerPage={developerPage} setDeveloperPage={setDeveloperPage} openAccount={openAccount} />{page === "home" ? <Home navigate={navigate} startCreate={startCreate} /> : page === "create" ? <CreateRuntimePage initialPrompt={runtimePrompt} navigate={navigate} /> : page === "assign-project" ? <ProjectAssignmentPage navigate={navigate} /> : page === "create-project" ? <CreateProjectPage navigate={navigate} /> : page === "project" ? <ProjectPage navigate={navigate} tab={projectTab} developerPage={developerPage} setDeveloperPage={setDeveloperPage} /> : page === "runtime" ? <RuntimePage navigate={navigate} /> : page === "playground" ? <PlaygroundPage /> : page === "templates" ? <TemplatesPage startCreate={startCreate} /> : page === "integrations" ? <IntegrationsPage navigate={navigate} openIntegration={openIntegration} /> : page === "integration-detail" ? <IntegrationDetailPage code={integrationDetail.code} name={integrationDetail.name} navigate={navigate} /> : page === "settings" ? <AccountSettings section={accountSection} setSection={setAccountSection} /> : page === "projects" ? <ProjectsPage navigate={navigate} /> : <main className="main inner-main standalone"><header><span className="eyebrow">Zyntry Console</span><h1>{utilityPage[0]}</h1><p>{utilityPage[1]}</p></header><EmptyPanel name={utilityPage[0]} /></main>}</div>;
 }
