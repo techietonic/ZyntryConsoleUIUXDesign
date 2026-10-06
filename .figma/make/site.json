@@ -1,0 +1,10 @@
+{
+  "description": "A developer-focused AI infrastructure platform offering streamlined project and runtime management with simple yet powerful tools for building and operating AI applications.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
